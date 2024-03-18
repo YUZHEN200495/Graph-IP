@@ -1,0 +1,30 @@
+import random
+from collections import Counter
+
+# simulate IP packets
+def generate_network_traffic(num_packets):
+    ip_addresses = [f"192.168.1.{random.randint(1, 100)}" for _ in range(num_packets)]
+    return ip_addresses
+
+# detect important IP address （heavy hitters）
+def detect_heavy_hitters(ip_addresses, threshold):
+    ip_counter = Counter(ip_addresses)
+    heavy_hitters = [ip for ip, count in ip_counter.items() if count >= threshold]
+    return heavy_hitters
+
+# main
+if __name__ == "__main__":
+    num_packets = 1000  # number of simulated IP packets
+    threshold = 10  
+
+    # generate simulated IP
+    network_traffic = generate_network_traffic(num_packets)
+
+    # detect important ID addr
+    heavy_hitters = detect_heavy_hitters(network_traffic, threshold)
+
+    # output
+    print("simulated IP:")
+    print(network_traffic)
+    print("\n important IP (Heavy Hitters):")
+    print(heavy_hitters)
