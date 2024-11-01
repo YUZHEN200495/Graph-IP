@@ -1,0 +1,97 @@
+import openai
+import time
+import os
+import chardet  # Importing chardet to detect file encoding
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+# Replace with your OpenAI API key
+openai.api_key = 'your-api-key'
+
+# Path to the local file
+file_path = "/Users/eugenie/Desktop/Thesis-test/first_100_lines.txt"
+
+# Check if the file exists
+if not os.path.exists(file_path):
+    print(f"File not found: {file_path}")
+else:
+    print("File found. Proceeding with reading file.")
+
+# Step 1: Detect file encoding
+with open(file_path, 'rb') as file:
+    rawdata = file.read()
+    result = chardet.detect(rawdata)
+    encoding = result['encoding']
+    print(f"Detected encoding: {encoding}")
+
+# Step 2: Read file content
+texts = []
+try:
+    with open(file_path, 'r', encoding=encoding) as file:
+        for _ in range(100):  # Read the first 100 lines
+            line = file.readline()
+            if not line:  # Break if end of file is reached
+                break
+            texts.append(line.strip())  # Strip newline characters and add to list
+except Exception as e:
+    print(f"Failed to read the file with encoding {encoding}: {e}")
+    exit(1)  # Exit if reading fails
+
+if not texts:
+    print("No text found in file or file is empty.")
+else:
+    print(f"Loaded {len(texts)} lines from the file.")
+
+# Step 3: Generate embeddings
+embeddings = []
+for idx, text in enumerate(texts):
+    if text:  # Ensure content is not empty
+        try:
+            response = openai.Embedding.create(input=text, model="text-embedding-ada-002")
+            embedding = response['data'][0]['embedding']  # Access embedding data
+            embeddings.append(embedding)
+            print(f"Embedding for line {idx + 1}: {embedding}")
+
+            time.sleep(1)  # Delay to avoid reaching request limits
+        except openai.error.RateLimitError:
+            print("Rate limit reached. Waiting 60 seconds before retrying...")
+            time.sleep(60)
+        except Exception as e:
+            print(f"An error occurred for line {idx + 1}: {e}")
+
+# Step 4: Visualize embeddings
+if embeddings:
+    # Use PCA to reduce embeddings to 2D
+    pca = PCA(n_components=2)
+    embeddings_2d = pca.fit_transform(embeddings)
+
+    # Plot the scatter plot
+    plt.figure(figsize=(10, 8))
+    plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c='blue', marker='o')
+    plt.title("2D Visualization of Text Embeddings")
+    plt.xlabel("PCA Component 1")
+    plt.ylabel("PCA Component 2")
+    plt.show()
+else:
+    print("No embeddings generated for visualization.")
+
+# 
+if embeddings:
+    print("Embeddings shape:", len(embeddings), "x", len(embeddings[0]))  # 打印嵌入向量的形状
+
+    #  2D
+    try:
+        pca = PCA(n_components=2)
+        embeddings_2d = pca.fit_transform(embeddings)
+
+        # plot
+        plt.figure(figsize=(10, 8))
+        plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c='blue', marker='o')
+        plt.title("2D Visualization of Text Embeddings")
+        plt.xlabel("PCA Component 1")
+        plt.ylabel("PCA Component 2")
+        plt.show()
+    except Exception as e:
+        print(f"An error occurred during PCA or plotting: {e}")
+else:
+    print("No embeddings generated for visualization.")
